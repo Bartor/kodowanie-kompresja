@@ -1,0 +1,1 @@
+Uruchomienie: `node index.js <plik do analizy>`

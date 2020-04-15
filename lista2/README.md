@@ -1,0 +1,1 @@
+Uruchomienie: `node index.js <encode|decode> <plik wejściowy> <plik wyjściowy>`

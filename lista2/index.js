@@ -1,3 +1,10 @@
+const fs = require('fs');
+const entropyAnalyzer = require('../shared/entropyAnalyzer');
+
+function getASCIIChar(binaryString) {
+    return String.fromCharCode(parseInt(binaryString, 2));
+}
+
 class HuffmanNode {
     constructor(symbol = '', weight = 0, parent = null, left = null, right = null) {
         this.parent = parent;
@@ -35,9 +42,8 @@ class AdaptiveHuffman {
     }
 
     findLargestHuffmanNode(weight) {
-        for (let node of this.nodes.reverse()) {
+        for (let node of this.nodes) {
             if (node.weight === weight) {
-                this.nodes.reverse();
                 return node;
             }
         }
@@ -69,8 +75,8 @@ class AdaptiveHuffman {
             if (internal.parent !== null) internal.parent.left = internal;
             else this.root = internal;
 
-            this.nodes.unshift(internal);
-            this.nodes.unshift(spawn);
+            this.nodes.push(internal);
+            this.nodes.push(spawn);
 
             this.seen[s.charCodeAt()] = spawn;
             node = internal.parent;
@@ -105,14 +111,10 @@ class AdaptiveHuffman {
         return result;
     }
 
-    getASCIIChar(binaryString) {
-        return String.fromCharCode(parseInt(binaryString, 2));
-    }
-
     decode(text) {
         let result = '';
 
-        let symbol = this.getASCIIChar(text.slice(0, 8));
+        let symbol = getASCIIChar(text.slice(0, 8));
         result += symbol;
         this.insert(symbol);
 
@@ -124,7 +126,7 @@ class AdaptiveHuffman {
 
             if (symbol) {
                 if (symbol === 'NYT') {
-                    symbol = this.getASCIIChar(text.slice(i + 1, i + 9));
+                    symbol = getASCIIChar(text.slice(i + 1, i + 9));
                     i += 8;
                 }
 
@@ -139,10 +141,58 @@ class AdaptiveHuffman {
     }
 }
 
-const e = new AdaptiveHuffman();
-const encoded = e.encode('testa       aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa duisa dashdsoiuhasddas8 sauha ds9hadsb ou da sau09da90 8dhadf ijhasdojhdsaolioasdoijsado iasdjposadijdasopiadjs opidja po dijaspodijasp oidjapos idjaposi djopasijd po');
-const d = new AdaptiveHuffman();
-const decoded = d.decode(encoded);
+if (process.argv.length !== 5) {
+    console.error('Usage: node index.js (decode|encode) [input] [output]');
+    process.exit(1);
+}
 
-console.log(encoded);
-console.log(decoded);
+const decode = process.argv[2] === 'decode';
+const input = process.argv[3];
+const output = process.argv[4];
+
+const coder = new AdaptiveHuffman();
+
+fs.readFile(input, (error, buffer) => {
+    if (error) {
+        console.error(error);
+        process.exit(1);
+    }
+
+    let result;
+
+    if (decode) {
+        let padding = buffer[0];
+
+        let codeString = '';
+        for (let char of buffer.slice(1)) {
+            codeString += char.toString(2).padStart(8, '0');
+        }
+        codeString = codeString.slice(0, -padding); // unpadding
+
+        result = coder.decode(codeString);
+    } else {
+        let encoded = coder.encode(buffer.toString());
+        let padding = (8 - (encoded.length % 8));
+
+        encoded = padding.toString(2).padStart(8, '0') + encoded; // first bytes is padding
+        encoded = encoded.padEnd(encoded.length + padding, '0'); // pad end
+
+        result = Buffer.alloc(encoded.length / 8);
+
+        let i = 0;
+        while (i < encoded.length) {
+            result.writeUInt8(parseInt(encoded.slice(i, i + 8), 2), i / 8);
+            i += 8;
+        }
+
+        const compressionRatio = buffer.length / (encoded.length / 8);
+
+        console.log(`Entropy: ${entropyAnalyzer(buffer).entropy}`);
+        console.log(`Compression ratio: ${compressionRatio}`);
+        console.log(`Avg code length: ${8/compressionRatio}`);
+    }
+
+    fs.writeFile(output, result, () => {
+        console.log('Done');
+    });
+});

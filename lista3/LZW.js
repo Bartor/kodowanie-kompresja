@@ -1,67 +1,79 @@
-function joinUint8Arrays(a, b) {
-    let result = new Uint8Array(a.length + b.length);
-    result.set(a);
-    result.set(b, a.length);
+function appendUint8(a, b) {
+    let aLength = a instanceof Uint8Array ? a.length : 1;
+    let bLength = b instanceof Uint8Array ? b.length : 1;
+    let result = new Uint8Array(aLength + bLength);
+
+    if (a instanceof Uint8Array) {
+        result.set(a);
+    } else {
+        result[0] = a;
+    }
+
+    if (b instanceof Uint8Array) {
+        result.set(b, aLength);
+    } else {
+        result[aLength] = b;
+    }
 
     return result;
 }
 
 function compress(buffer) {
-    let currentDictSize = 256;
+    let result = [];
 
     const dict = {};
-    for (let i = 0; i < currentDictSize; i++) {
+    let size = 256;
+    for (let i = 0; i < size; i++) {
         dict[String.fromCharCode(i)] = i;
     }
 
-    let word = '';
-    let result = [];
-
-    for (let char of buffer) {
-        let expandedWord = word + String.fromCharCode(char);
-
-        if (dict.hasOwnProperty(expandedWord)) {
-            word = expandedWord;
+    let previous = String.fromCharCode(buffer[0]);
+    for (let char of buffer.slice(1)) {
+        if (dict.hasOwnProperty(previous + String.fromCharCode(char))) {
+            previous += String.fromCharCode(char);
         } else {
-            result.push(dict[word]);
-            dict[expandedWord] = currentDictSize++;
-            word = String.fromCharCode(char);
+            result.push(dict[previous]);
+
+            dict[previous + String.fromCharCode(char)] = size++;
+
+            previous = String.fromCharCode(char);
         }
     }
+    result.push(dict[previous]);
 
-    if (word) {
-        result.push(dict[word]);
-    }
-
-    return result;
+    return result.map(e => e + 1);
 }
 
+// decompression is really slow and unoptimized
 function decompress(numberArray) {
-    let currentDictSize = 256;
+    numberArray = numberArray.map(e => e - 1);
+
+    let result = Uint8Array.of(numberArray[0]);
 
     const dict = {};
-    for (let i = 0; i < currentDictSize; i++) {
+    let size = 256;
+
+    for (let i = 0; i < size; i++) {
         dict[i] = Uint8Array.of(i);
     }
 
-    let word = Uint8Array.of(numberArray[0]);
-    let result = word;
-    let entry = new Uint8Array();
-
+    let old = numberArray[0];
+    let c = new Uint8Array();
+    let s = new Uint8Array();
     for (let num of numberArray.slice(1)) {
         if (dict.hasOwnProperty(num)) {
-            entry = dict[num];
+            s = dict[num];
         } else {
-            if (num === currentDictSize) {
-                entry = Uint8Array.of(word, word[0]);
-            } else {
-                throw 'Compression error';
-            }
+            s = dict[old];
+            s = appendUint8(s, c);
         }
 
-        result = joinUint8Arrays(result, entry);
-        dict[currentDictSize++] = Uint8Array.of(word, entry[0]);
-        word = entry;
+        result = appendUint8(result, s);
+
+        c = s[0];
+        dict[size++] = appendUint8(dict[old], c);
+
+        old = num;
     }
 
     return Buffer.from(result);

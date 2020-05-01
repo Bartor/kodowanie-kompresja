@@ -1,4 +1,8 @@
-module.exports = (buffer) => {
+/**
+ * @argument buffer - Input buffer to analyze the entropy
+ * @argument byteCallback - Optional callback which is called for every read byte 
+ */
+module.exports = (buffer, byteCallback) => {
     const byteStats = {};
     const conditionalByteStats = {};
 
@@ -6,6 +10,8 @@ module.exports = (buffer) => {
     let conditionalEntropy = 0;
 
     for (let [index, byte] of buffer.entries()) {
+        if (byteCallback) byteCallback(index, byte);
+
         byteStats[byte] = byteStats[byte] + 1 || 1;
 
         if (conditionalByteStats[byte]) { // yeah I love writing self-documenting, readable code, how did you know

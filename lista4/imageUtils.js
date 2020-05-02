@@ -10,19 +10,19 @@ class Pixel {
     }
 
     sub(pixel) {
-        return new Pixel((this.r - pixel.r).mod(256), (this.g - pixel.g).mod(256), (this.b - pixel.b).mod(256));
+        return new Pixel(this.r - pixel.r, this.g - pixel.g, this.b - pixel.b);
     }
 
     add(pixel) {
-        return new Pixel((this.r + pixel.r) % 256, (this.g + pixel.g) % 256, (this.b + pixel.b) % 256);
+        return new Pixel(this.r + pixel.r, this.g + pixel.g, this.b + pixel.b);
     }
 
     div(num) {
         return new Pixel(Math.floor(this.r / num), Math.floor(this.g / num), Math.floor(this.b / num));
     }
 
-    length() {
-        return Math.sqrt((this.r / 255) ** 2 + (this.g / 255) ** 2 + (this.b / 255) ** 2);
+    mod(num) {
+        return new Pixel(this.r.mod(num), this.g.mod(num), this.b.mod(num));
     }
 
     toString() {
@@ -98,18 +98,16 @@ const predictionSchemes = [
     (n, w, nw) => w,
     (n, w, nw) => n,
     (n, w, nw) => nw,
-    (n, w, nw) => n.add(w).sub(nw),
-    (n, w, nw) => n.add(w.sub(nw).div(2)),
-    (n, w, nw) => w.add(n.sub(nw).div(2)),
-    (n, w, nw) => n.add(w).div(2),
+    (n, w, nw) => n.add(w).sub(nw).mod(256),
+    (n, w, nw) => n.add(w.sub(nw).div(2)).mod(256),
+    (n, w, nw) => w.add(n.sub(nw).div(2)).mod(256),
+    (n, w, nw) => n.add(w).div(2).mod(256),
     (n, w, nw) => {
-        if (nw.length() >= Math.max(n.length(), w.length())) {
-            return n.length() > w.length() ? w : n;
-        } else if (nw.length() <= Math.max(n.length(), w.length())) {
-            return n.length() > w.length() ? n : w;
-        } else {
-            return w.add(n).sub(nw);
-        }
+        const r = nw.r >= Math.max(n.r, w.r) ? Math.min(n.r, w.r) : (nw.r <= Math.min(n.r, w.r) ? Math.max(n.r, w.r) : w.r + n.r - nw.r);
+        const g = nw.g >= Math.max(n.g, w.g) ? Math.min(n.g, w.g) : (nw.g <= Math.min(n.g, w.g) ? Math.max(n.g, w.g) : w.g + n.g - nw.g);
+        const b = nw.b >= Math.max(n.b, w.b) ? Math.min(n.b, w.b) : (nw.b <= Math.min(n.b, w.b) ? Math.max(n.b, w.b) : w.b + n.b - nw.b);
+
+        return new Pixel(r, g, b).mod(256);
     }
 ];
 
@@ -122,7 +120,7 @@ function jpegLs(colors, scheme, neighbourColor = new Pixel(0, 0, 0)) {
             const w = (colors[row - 1] || [])[column] || neighbourColor;
             const nw = (colors[row - 1] || [])[column - 1] || neighbourColor;
 
-            currentRow.push(colors[row][column].sub(scheme(n, w, nw)));
+            currentRow.push(colors[row][column].sub(scheme(n, w, nw)).mod(256));
         }
         result.push(currentRow);
     }

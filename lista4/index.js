@@ -57,11 +57,11 @@ fs.readFile(process.argv[2], (err, buffer) => {
             no: index
         };
 
-        console.log(`SCHEME #${index} ENTROPIES:\n`, entropies);
+        console.log(`SCHEME #${index + 1} ENTROPIES:\n`, entropies);
     });
 
-    console.log(`Best scheme for r:\t${rBest.no} -> ${rBest.v}`);
-    console.log(`Best scheme for g:\t${gBest.no} -> ${gBest.v}`);
-    console.log(`Best scheme for b:\t${bBest.no} -> ${bBest.v}`);
-    console.log(`Best scheme for full:\t${fullBest.no} -> ${fullBest.v}`);
+    console.log(`Best scheme for r:\t#${rBest.no + 1} -> ${rBest.v}`);
+    console.log(`Best scheme for g:\t#${gBest.no + 1} -> ${gBest.v}`);
+    console.log(`Best scheme for b:\t#${bBest.no + 1} -> ${bBest.v}`);
+    console.log(`Best scheme for full:\t#${fullBest.no + 1} -> ${fullBest.v}`);
 });

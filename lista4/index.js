@@ -1,6 +1,7 @@
 const fs = require('fs');
 
-const imageUtils = require('./imageUtils');
+const imageUtils = require('../shared/imageUtils');
+const jpegLs = require('./jpegLs');
 
 if (process.argv.length !== 3) {
     console.log('Usage: node index.js <tga input file>');
@@ -35,8 +36,8 @@ fs.readFile(process.argv[2], (err, buffer) => {
             no: -1
         },
     ];
-    imageUtils.predictionSchemes.forEach((scheme, index) => {
-        const predicted = imageUtils.jpegLs(original.colors, scheme);
+    jpegLs.predictionSchemes.forEach((scheme, index) => {
+        const predicted = jpegLs.jpegLs(original.colors, scheme);
         const entropies = imageUtils.colorEntropy(predicted);
 
 

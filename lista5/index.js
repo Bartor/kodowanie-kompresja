@@ -2,6 +2,14 @@ const imageUtils = require('../shared/imageUtils');
 const lbg = require('./lbg');
 const fs = require('fs');
 
+function mse(a, b) {
+    return 1 / a.length * a.reduce((acc, e, i) => acc + lbg.vectorDistance(e, b[i]) ** 2, 0);
+} // nie wiem czy to ma sens
+
+function snr(bitmap, mse) { // to też
+    return (1 / bitmap.length * bitmap.reduce((acc, e) => acc + e.reduce((a, i) => a + i ^ 2, 0), 0)) / mse;
+}
+
 if (process.argv.length !== 5) {
     console.log('Usage: node index.js <level> <input file> <output file>');
     process.exit(1);
@@ -22,13 +30,17 @@ fs.readFile(process.argv[3], (err, buffer) => {
         const diffs = codebook.map(e => lbg.vectorDistance(pixel, e));
         return codebook[diffs.findIndex(e => e === Math.min(...diffs))];
     });
-    
+
     let i = 18;
     for (let pixel of newImage.reverse()) {
         for (let color of pixel) {
             buffer[i++] = color;
         }
     }
+
+    const calculatedMse = mse(arrayMapped, newImage);
+    console.log(`MSE: ${calculatedMse}`);
+    console.log(`SNR: ${snr(newImage, calculatedMse)}`)
 
     fs.writeFile(process.argv[4], buffer, () => {
         console.log('Done');

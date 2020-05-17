@@ -3,10 +3,10 @@ const lbg = require('./lbg');
 const fs = require('fs');
 
 function mse(a, b) {
-    return 1 / a.length * a.reduce((acc, e, i) => acc + lbg.vectorDistance(e, b[i]) ** 2, 0);
-} // nie wiem czy to ma sens
+    return 1 / a.length * a.reduce((acc, e, i) => acc + lbg.vectorDistance(e, b[i]), 0);
+}
 
-function snr(bitmap, mse) { // to też
+function snr(bitmap, mse) {
     return (1 / bitmap.length * bitmap.reduce((acc, e) => acc + e.reduce((a, i) => a + i ^ 2, 0), 0)) / mse;
 }
 

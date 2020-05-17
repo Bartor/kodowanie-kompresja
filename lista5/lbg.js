@@ -1,11 +1,12 @@
 module.exports = {
-    createCodebook
+    createCodebook,
+    vectorDistance
 };
 
-function DefaultDict(fn) {
+function MapWithDefault(defaultFn) {
     this.dict = {};
     this.get = function (key) {
-        return this.dict[key] ? this.dict[key] : this.dict[key] = fn();
+        return this.dict[key] ? this.dict[key] : this.dict[key] = defaultFn();
     }
 }
 
@@ -16,6 +17,7 @@ function createCodebook(image, codebookSize, eps = 0.0001) {
     let averageDistortion = elementDistortion(c0, image);
     while (codebook.length < codebookSize) {
         [codebook, averageDistortion] = splitCodeblock(image, codebook, eps, averageDistortion);
+        console.log(`${codebook.length}/${codebookSize} done`);
     }
 
     return codebook;
@@ -29,8 +31,8 @@ function splitCodeblock(data, codebook, eps, initialaverageDistortion) {
     let error = 1 + eps;
     while (error > eps) {
         const closestsArray = Array(data.length).fill(null);
-        const nearVectors = new DefaultDict(() => []);
-        const nearIndices = new DefaultDict(() => []);
+        const nearVectors = new MapWithDefault(() => []);
+        const nearIndices = new MapWithDefault(() => []);
 
         for (let [id, d] of data.entries()) {
             let minimalDistance = Infinity;

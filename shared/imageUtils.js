@@ -30,9 +30,9 @@ class Pixel {
     }
 }
 
-function readTga(inputBuffer) {
-    const height = inputBuffer[15] * 256 + inputBuffer[14]
-    const width = inputBuffer[13] * 256 + inputBuffer[12]
+function readTga(inputBuffer, transpose = true) {
+    const height = inputBuffer[15] * 256 + inputBuffer[14];
+    const width = inputBuffer[13] * 256 + inputBuffer[12];
 
     const result = [];
     for (let y = 0; y < height; y++) {
@@ -52,7 +52,7 @@ function readTga(inputBuffer) {
     return {
         width: width,
         height: height,
-        colors: result[0].map((_, i) => result.map(row => row[i])), // transpose for colors[x][y]
+        colors: transpose ? result[0].map((_, i) => result.map(row => row[i])) : result, // transpose for colors[x][y]
         raw: inputBuffer.slice(18, inputBuffer.length - 26)
     };
 }

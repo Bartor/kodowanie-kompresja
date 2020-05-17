@@ -22,7 +22,7 @@ fs.readFile(process.argv[3], (err, buffer) => {
     }
 
     const original = imageUtils.readTga(buffer, false);
-    const arrayMapped = original.colors.map(row => row.map(pixel => [pixel.b, pixel.g, pixel.r])).reduce((acc, e) => [...acc, ...e], []);
+    const arrayMapped = original.colors.map(row => row.map(pixel => [pixel.b, pixel.g, pixel.r])).reduce((acc, e) => [...acc, ...e.reverse()], []);
     const codebook = lbg.createCodebook(arrayMapped, 2 ** process.argv[2])
         .map(e => e.map(v => Math.round(v)));
 

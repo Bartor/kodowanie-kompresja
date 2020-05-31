@@ -1,6 +1,6 @@
 const fs = require('fs');
 const lzw = require('./lzw');
-const coding = require('./coding');
+const coding = require('../shared/coding');
 const entropyAnalyzer = require('../shared/entropyAnalyzer');
 
 if ((process.argv.includes('decompress') && process.argv.length !== 5) ||

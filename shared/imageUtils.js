@@ -21,12 +21,39 @@ class Pixel {
         return new Pixel(Math.floor(this.r / num), Math.floor(this.g / num), Math.floor(this.b / num));
     }
 
+    mul(num) {
+        return new Pixel(this.r * num, this.g * num, this.b * num);
+    }
+
     mod(num) {
         return new Pixel(this.r.mod(num), this.g.mod(num), this.b.mod(num));
     }
 
+    quantize(step) {
+        return new Pixel(Math.floor(this.r / step) * step, Math.floor(this.g / step) * step, Math.floor(this.b / step) * step);
+    }
+
+    normalize(low = 0, high = 255) {
+        const r = Math.max(Math.min(255, this.r), 0);
+        const g = Math.max(Math.min(255, this.g), 0);
+        const b = Math.max(Math.min(255, this.b), 0);
+        return new Pixel(r, g, b);
+    }
+
     toString() {
         return `(${this.r}, ${this.g}, ${this.b})`;
+    }
+
+    *[Symbol.iterator]() {
+        yield this.r;
+        yield this.g;
+        yield this.b;
+    }
+
+    * bgr() {
+        yield this.b;
+        yield this.g;
+        yield this.r;
     }
 }
 
@@ -52,8 +79,7 @@ function readTga(inputBuffer, transpose = true) {
     return {
         width: width,
         height: height,
-        colors: transpose ? result[0].map((_, i) => result.map(row => row[i])) : result, // transpose for colors[x][y]
-        raw: inputBuffer.slice(18, inputBuffer.length - 26)
+        colors: transpose ? result[0].map((_, i) => result.map(row => row[i])) : result // transpose for colors[x][y]
     };
 }
 

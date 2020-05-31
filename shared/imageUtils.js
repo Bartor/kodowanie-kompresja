@@ -29,6 +29,10 @@ class Pixel {
         return new Pixel(this.r.mod(num), this.g.mod(num), this.b.mod(num));
     }
 
+    quantize(num) {
+        return new Pixel(Math.round(this.r / num), Math.round(this.g / num), Math.round(this.b / num));
+    }
+
     normalize(low = 0, high = 255) {
         const r = Math.max(Math.min(255, this.r), 0);
         const g = Math.max(Math.min(255, this.g), 0);

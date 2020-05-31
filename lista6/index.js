@@ -107,7 +107,7 @@ function encodeHighpass(buffer, quantizationStep) {
     }
 
     const step = Math.floor(256 / (2 ** quantizationStep));
-    const quantized = filtered.map(pixel => pixel.div(step));
+    const quantized = filtered.map(pixel => pixel.quantize(step));
     const nums = pixelsToNums(quantized);
 
     const header = Buffer.from([HEADERS.HIGH | quantizationStep]);
@@ -121,7 +121,7 @@ function encodeHighpass(buffer, quantizationStep) {
 function decodeHighpass(buffer, quantizationStep) {
     const nums = coding.unmapNegative(coding.decode(buffer.slice(18)));
     const step = 2 ** (8 - quantizationStep);
-    const pixels = numsToPixels(nums).map(pixel => pixel.mul(step));
+    const pixels = numsToPixels(nums).map(pixel => pixel.mul(step).normalize());
 
     const outputBuffer = Buffer.alloc(pixels.length * 3);
     const out = Buffer.concat([buffer.slice(0, 18), outputBuffer]);

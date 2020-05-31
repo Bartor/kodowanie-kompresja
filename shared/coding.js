@@ -11,6 +11,14 @@ const DELTA_READING_STATES = {
     NUMBER: 2
 };
 
+function mapNegative(numberArray) {
+    return numberArray.map(num => num >= 0 ? 2 * num + 1 : -2 * num);
+}
+
+function unmapNegative(numberArray) {
+    return numberArray.map(num => num % 2 ? (num - 1) / 2 : -num / 2);
+}
+
 function getBit(byte, bit) {
     return byte & [
         0b10000000, // 0..
@@ -316,5 +324,7 @@ module.exports = {
     gamma: gammaEncode,
     delta: deltaEncode,
     fibonacci: fibEncode,
-    decode: decode
+    decode: decode,
+    mapNegative,
+    unmapNegative
 };

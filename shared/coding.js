@@ -326,5 +326,6 @@ module.exports = {
     fibonacci: fibEncode,
     decode: decode,
     mapNegative,
-    unmapNegative
+    unmapNegative,
+    getBit
 };

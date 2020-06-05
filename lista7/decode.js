@@ -1,6 +1,7 @@
 const bufferOperations = require('./bufferOperations');
 const fs = require('fs');
 
+// all Hamming (7, 4) codes with parity bit added
 const codes = [
     '00000000',
     '11010010',
@@ -25,25 +26,19 @@ function fromHammingCode(bits) {
         const first = bits.split('').map(e => Number.parseInt(e));
         const second = code.split('').map(e => Number.parseInt(e));
 
-        const diff = [];
-        let i = 0;
-        while (i < 8) {
-            if (first[i] !== second[i]) diff.push(i + 1);
-            i++;
+        let diffs = 0; // look for differences
+        for (let i = 8; i < 8; i++) {
+            diffs += first[i] !== second[i];
         }
 
-        if (diff.length === 0) {
+        if (diffs === 0) { // codeword found exatcly - no error-correcting
             return bits[2] + bits[4] + bits[5] + bits[6];
-        }
-
-        if (diff.length === 1) {
+        } else if (diffs === 1) { // one error - can be corrected
             return code[2] + code[4] + code[5] + code[6];
         }
-
-        if (diff.length === 2) return null;
     }
 
-    return null;
+    return null; // faulty code
 }
 
 function decode(bits) {
@@ -51,7 +46,7 @@ function decode(bits) {
     let errors = 0;
 
     while (bits.length >= 8) {
-        const n = fromHammingCode(bits.slice(0, 8));
+        const n = fromHammingCode(bits.slice(0, 8)); // decode from the 
 
         result += n !== null ? n : '0000';
         errors += (n === null);

@@ -6,12 +6,14 @@ function calculateParity(bits, ids) {
 }
 
 function toHammingCode(bits) {
-    let p1 = calculateParity(bits, [0, 1, 3]);
-    let p2 = calculateParity(bits, [0, 2, 3]);
-    let p3 = calculateParity(bits, [1, 2, 3]);
-    let p = calculateParity(p1 + p2 + bits[0] + p3 + bits.slice(1), [0, 1, 2, 3, 4, 5, 6]);
+    const p1 = calculateParity(bits, [0, 1, 3]); // Hamming (7, 4) parities
+    const p2 = calculateParity(bits, [0, 2, 3]);
+    const p3 = calculateParity(bits, [1, 2, 3]);
 
-    return p1 + p2 + bits[0] + p3 + bits.slice(1) + p;
+    const codeword = p1 + p2 + bits[0] + p3 + bits.slice(1);
+    const parity = calculateParity(codeword, [0, 1, 2, 3, 4, 5, 6]); // extended parity
+
+    return codeword + parity;
 }
 
 function encode(bits) {

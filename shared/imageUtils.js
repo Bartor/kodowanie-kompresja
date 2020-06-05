@@ -33,6 +33,20 @@ class Pixel {
         return new Pixel(Math.round(this.r / num), Math.round(this.g / num), Math.round(this.b / num));
     }
 
+    distance(other) {
+        const rDist = (other.r - this.r) ** 2;
+        const gDist = (other.g - this.g) ** 2;
+        const bDist = (other.b - this.b) ** 2;
+
+        return {
+            rDist,
+            gDist,
+            bDist,
+            dist: (rDist + gDist + bDist),
+            distSq: (rDist ** 2 + gDist ** 2 + bDist ** 2)
+        };
+    }
+
     normalize(low = 0, high = 255) {
         const r = Math.max(Math.min(255, this.r), 0);
         const g = Math.max(Math.min(255, this.g), 0);

@@ -1,3 +1,4 @@
+const CustomQuantizer = require('./CustomQuantizer');
 const imageUtils = require('../shared/imageUtils');
 const coding = require('../shared/coding');
 const fs = require('fs');
@@ -17,6 +18,24 @@ const LOW_PASS = [
     [1, 1, 1],
     [1, 1, 1]
 ];
+
+function stats(a, b) {
+    const mse = a.reduce((acc, pixel, index) => acc + pixel.distance(b[index]).dist, 0) / a.length;
+    const rMse = a.reduce((acc, pixel, index) => acc + pixel.distance(b[index]).rDist, 0) / a.length;
+    const gMse = a.reduce((acc, pixel, index) => acc + pixel.distance(b[index]).gDist, 0) / a.length;
+    const bMse = a.reduce((acc, pixel, index) => acc + pixel.distance(b[index]).bDist, 0) / a.length;
+
+    const zeroPixel = new imageUtils.Pixel(0, 0, 0);
+    const snr = a.reduce((acc, pixel) => acc + pixel.distance(zeroPixel).distSq, 0) / (mse * a.length);
+
+    return {
+        snr,
+        mse,
+        rMse,
+        gMse,
+        bMse,
+    };
+}
 
 class BitmapWrapper {
     constructor(parsedTga) {
@@ -106,25 +125,40 @@ function encodeHighpass(buffer, quantizationStep) {
         }
     }
 
-    const step = Math.floor(256 / (2 ** quantizationStep));
-    const quantized = filtered.map(pixel => pixel.quantize(step));
+    const q = new CustomQuantizer(quantizationStep);
+    q.updateWith(filtered); // update quantizer for those pixels
+    const quantized = q.quantizePixels(filtered); // non-uniform quantization
+
+    const s = stats(bitmap.toArray(), quantized);
+    console.log(`HIGHPASS[k = ${quantizationStep}] STATS:
+MSE: ${s.mse}
+SNR: ${10 * Math.log(s.snr) / Math.log(10)} (db)
+rMSE: ${s.rMse}
+gMSE: ${s.gMse}
+bMSE: ${s.bMse}
+`);
+    // const quantized = filtered.map(pixel => pixel.quantize(step)); // uniform quantization
     const nums = pixelsToNums(quantized);
 
     const header = Buffer.from([HEADERS.HIGH | quantizationStep]);
+    const quantizationArrays = Buffer.concat(q.getQuntizerArrays().map(arr => Buffer.from(arr))); // rQ, gQ, bQ quantization arrays
     const outputBuffer = coding.fibonacci(nums);
-    const out = Buffer.concat([header, buffer.slice(0, 18), outputBuffer]);
+    const out = Buffer.concat([header, quantizationArrays, buffer.slice(0, 18), outputBuffer]);
     fs.writeFile('high_pass.encoded', out, () => {
         console.log('high_pass.encoded done');
     });
 }
 
 function decodeHighpass(buffer, quantizationStep) {
-    const nums = coding.unmapNegative(coding.decode(buffer.slice(18)));
-    const step = 2 ** (8 - quantizationStep);
-    const pixels = numsToPixels(nums).map(pixel => pixel.mul(step).normalize());
+    const rQ = buffer.slice(0, 2 ** quantizationStep);
+    const gQ = buffer.slice(2 ** quantizationStep, 2 * 2 ** quantizationStep);
+    const bQ = buffer.slice(2 * 2 ** quantizationStep, 3 * 2 ** quantizationStep);
+
+    const nums = coding.unmapNegative(coding.decode(buffer.slice(18 + 3 * 2 ** quantizationStep)));
+    const pixels = numsToPixels(nums).map(pixel => new imageUtils.Pixel(rQ[pixel.r], gQ[pixel.g], bQ[pixel.b]));
 
     const outputBuffer = Buffer.alloc(pixels.length * 3);
-    const out = Buffer.concat([buffer.slice(0, 18), outputBuffer]);
+    const out = Buffer.concat([buffer.slice(3 * 2 ** quantizationStep, 18 + 3 * 2 ** quantizationStep), outputBuffer]);
 
     let i = 18;
     for (let pixel of pixels) {
@@ -147,6 +181,15 @@ function encodeLowpass(buffer) {
             filtered.push(filter(bitmap, i, j, LOW_PASS));
         }
     }
+
+    const s = stats(bitmap.toArray(), filtered);
+    console.log(`LOWPASS STATS:
+MSE: ${s.mse}
+SNR: ${10 * Math.log(s.snr) / Math.log(10)} (db)
+rMSE: ${s.rMse}
+gMSE: ${s.gMse}
+bMSE: ${s.bMse}
+`);
 
     const diffed = diffEncode(filtered);
     const nums = pixelsToNums(diffed);

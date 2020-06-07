@@ -27,7 +27,7 @@ function fromHammingCode(bits) {
         const second = code.split('').map(e => Number.parseInt(e));
 
         let diffs = 0; // look for differences
-        for (let i = 8; i < 8; i++) {
+        for (let i = 0; i < 8; i++) {
             diffs += first[i] !== second[i];
         }
 
